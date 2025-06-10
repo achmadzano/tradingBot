@@ -618,32 +618,56 @@ class TradingBot:
     def get_tradingview_symbol(self, yahoo_symbol):
         """Convert Yahoo Finance symbol to TradingView symbol"""
         symbol_mapping = {
+            # Indices mapping
+            "^NDX": "NASDAQ:NDX",        # NASDAQ 100
+            "^IXIC": "NASDAQ:IXIC",      # NASDAQ Composite
+            "^GSPC": "TVC:SPX",          # S&P 500
+            "^DJI": "TVC:DJI",           # Dow Jones
+            "^RUT": "TVC:RUT",           # Russell 2000
+            "^VIX": "TVC:VIX",           # VIX
+            "^FTSE": "TVC:UKX",          # FTSE 100
+            "^GDAXI": "TVC:DAX",         # DAX
+            "^N225": "TVC:NI225",        # Nikkei 225
+            "^HSI": "TVC:HSI",           # Hang Seng
+            "^FCHI": "TVC:CAC",          # CAC 40
+            "^AXJO": "TVC:XJO",          # ASX 200
+            
             # Commodities mapping
-            "GC=F": "GOLD",          # Gold
-            "SI=F": "SILVER",        # Silver  
-            "CL=F": "USOIL",         # Crude Oil
-            "NG=F": "NATURALGAS",    # Natural Gas
+            "GC=F": "TVC:GOLD",          # Gold
+            "SI=F": "TVC:SILVER",        # Silver  
+            "CL=F": "TVC:USOIL",         # Crude Oil
+            "NG=F": "TVC:NATURALGAS",    # Natural Gas
+            "HG=F": "TVC:COPPER",        # Copper
+            "PL=F": "TVC:PLATINUM",      # Platinum
+            "PA=F": "TVC:PALLADIUM",     # Palladium
             
             # Forex mapping (remove =X)
-            "EURUSD=X": "EURUSD",
-            "GBPUSD=X": "GBPUSD", 
-            "USDJPY=X": "USDJPY",
-            "USDCHF=X": "USDCHF",
-            "AUDUSD=X": "AUDUSD",
-            "USDCAD=X": "USDCAD",
-            "NZDUSD=X": "NZDUSD",
+            "EURUSD=X": "FX:EURUSD",
+            "GBPUSD=X": "FX:GBPUSD", 
+            "USDJPY=X": "FX:USDJPY",
+            "USDCHF=X": "FX:USDCHF",
+            "AUDUSD=X": "FX:AUDUSD",
+            "USDCAD=X": "FX:USDCAD",
+            "NZDUSD=X": "FX:NZDUSD",
             
             # Crypto mapping (replace -USD with USD)
-            "BTC-USD": "BTCUSD",
-            "ETH-USD": "ETHUSD",
-            "ADA-USD": "ADAUSD",
-            "DOT-USD": "DOTUSD", 
-            "LINK-USD": "LINKUSD",
-            "UNI-USD": "UNIUSD",
+            "BTC-USD": "BINANCE:BTCUSDT",
+            "ETH-USD": "BINANCE:ETHUSDT",
+            "ADA-USD": "BINANCE:ADAUSDT",
+            "DOT-USD": "BINANCE:DOTUSDT", 
+            "LINK-USD": "BINANCE:LINKUSDT",
+            "UNI-USD": "BINANCE:UNIUSDT",
+            "SOL-USD": "BINANCE:SOLUSDT",
+            "AVAX-USD": "BINANCE:AVAXUSDT",
+            "MATIC-USD": "BINANCE:MATICUSDT",
         }
         
-        # Return mapped symbol or original symbol for stocks
-        return symbol_mapping.get(yahoo_symbol, yahoo_symbol)
+        # Return mapped symbol or add NASDAQ prefix for stocks
+        if yahoo_symbol in symbol_mapping:
+            return symbol_mapping[yahoo_symbol]
+        else:
+            # For stocks, add NASDAQ prefix
+            return f"NASDAQ:{yahoo_symbol}"
 
 def main():
     st.set_page_config(
@@ -683,20 +707,44 @@ def main():
         
         pair_categories = {
             "Forex Major": ["EURUSD=X", "GBPUSD=X", "USDJPY=X", "USDCHF=X", "AUDUSD=X", "USDCAD=X", "NZDUSD=X"],
-            "Commodities": {
-                "Gold (XAU/USD)": "GC=F",
-                "Silver (XAG/USD)": "SI=F", 
-                "Crude Oil (WTI)": "CL=F",
-                "Natural Gas": "NG=F"
+            "Indices": {
+                "NASDAQ": "^NDX",
+                "S&P 500": "^GSPC",
+                "Dow Jones": "^DJI",
+                "Russell 2000": "^RUT",
+                "VIX": "^VIX",
+                "FTSE 100": "^FTSE",
+                "DAX": "^GDAXI",
+                "Nikkei 225": "^N225",
+                "Hang Seng": "^HSI",
+                "CAC 40": "^FCHI",
+                "ASX 200": "^AXJO"
             },
-            "Crypto": ["BTC-USD", "ETH-USD", "ADA-USD", "DOT-USD", "LINK-USD", "UNI-USD"],
-            "Stocks": ["AAPL", "GOOGL", "MSFT", "TSLA", "AMZN", "NVDA"]
+            "Commodities": {
+                "Gold": "GC=F",
+                "Silver": "SI=F", 
+                "Crude Oil": "CL=F",
+                "Natural Gas": "NG=F",
+                "Copper": "HG=F",
+                "Platinum": "PL=F",
+                "Palladium": "PA=F",
+                "Corn": "ZC=F",
+                "Wheat": "ZW=F",
+                "Soybeans": "ZS=F"
+            },
+            "Crypto": ["BTC-USD", "ETH-USD", "ADA-USD", "DOT-USD", "LINK-USD", "UNI-USD", "SOL-USD", "AVAX-USD", "MATIC-USD"],
+            "Stocks": ["AAPL", "GOOGL", "MSFT", "TSLA", "AMZN", "NVDA", "META", "NFLX", "AMD", "INTC"]
         }
         
         selected_category = st.selectbox("Select Category", list(pair_categories.keys()))
         
         # Handle different formats for different categories
-        if selected_category == "Commodities":
+        if selected_category == "Indices":
+            # For indices, show the descriptive names but get the symbol
+            indices_options = list(pair_categories[selected_category].keys())
+            selected_index = st.selectbox("Select Trading Pair", indices_options)
+            selected_pair = pair_categories[selected_category][selected_index]
+        elif selected_category == "Commodities":
             # For commodities, show the descriptive names but get the symbol
             commodity_options = list(pair_categories[selected_category].keys())
             selected_commodity = st.selectbox("Select Trading Pair", commodity_options)
